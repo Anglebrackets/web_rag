@@ -5,7 +5,6 @@ uses links browser which must be installed.
 only tested on linux
 
 TODO:
-* use substitution variable for query in url instead of adding at end
 * instead of sending whole query, send from keyword to period, then remove from query.
   Prompt: Research super bowl. When is the super bowl?
    -- "super bowl" sent. prompt is "When is the super bowl".
@@ -13,7 +12,8 @@ TODO:
   "Analyse" key: summarizes, then saves
   "Examine" key: doesnt save query, doesn't use saved string, only puts results in context
   "Scan" key: like Examine, but summarized
-  "Get" key: followed by url, other params are ignored. saves to context.
+  "Get" key: followed by url, then rest of sentence (if any) is query. saves to context.
+   prompt: Get https://www.wikipedia.org/wiki/ Charles_Martel. Who was Charles Martel?
   "Summarize" key: like Get, but summarized
   
   Put results in saved string (editable!), then always added to context until cleared
@@ -22,6 +22,11 @@ TODO:
 * summarize: use chat.generate_chat_prompt on "summarize the following:"+ query-results
   before storing in research string
 * button array for multiple keyword/url pairs
+
+WIP:
+
+DONE:
+* use substitution variable for query in url instead of adding at end
 """
 
 import gradio as gr
@@ -52,9 +57,12 @@ except FileNotFoundError:
 def get_search_context(url, query):
     query = urllib.parse.quote_plus(query)
     if len(params['space']) > 0:
-      query.replace("+", params['space'])
-    print(f"get_search_context: {url} + {query}")
-    search_context = os.popen('links -dump ' + url + query).read()
+      query = query.replace("+", params['space'])
+    if url.find('%q') >= 0:
+      url = url.replace('%q', query)
+    print(f"get_search_context: {url}")
+    #search_context = "\nJonn Jonze is the president of Frubaz Corp.\n"
+    search_context = os.popen('links -dump ' + url).read()
     start = search_context.find(params['start'])
     if start < 0:
       start = 0
@@ -76,7 +84,6 @@ def custom_generate_chat_prompt(user_input, state, **kwargs):
     if params['activate']:
         if user_prompt.startswith(params['key']):
             user_prompt = user_input[4:].strip()
-            #search_context = "\nJonn Jonze is the president of Frubaz Corp.\n"
             search_context = get_search_context(params['url'], user_prompt)
             state['context'] = search_context + state['context']
     result = chat.generate_chat_prompt(user_prompt, state, **kwargs)
@@ -91,7 +98,7 @@ def ui():
     To learn about gradio components, check out the docs:
     https://gradio.app/docs/
     """
-    with gr.Accordion("Web RAG"):
+    with gr.Accordion("Web RAG -- Retrieval Augmented Generation from a web URL"):
         with gr.Row():
           activate = gr.Checkbox(value=params['activate'], label='Activate Web RAG')
           clear = gr.Button("Clear Research", elem_classes='refresh-button')
@@ -124,7 +131,7 @@ def ui():
         params.update({'key': x})
         save()
     def button_clicked(button_input):
-        return f"You clicked the '{button_input}' button."
+        print(f"You clicked the '{button_input}' button.")
 
     clear.click(button_clicked, clear, None)
     activate.change(update_activate, activate, None)
