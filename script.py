@@ -5,18 +5,23 @@ uses links browser which must be installed.
 only tested on linux
 
 TODO:
-* "Research" key: saves to string in params,
-  Put results in saved string (editable?), always add to context
-  Clear Research button
-  Research adds to string or replaces?
-  "www," key doesnt save query, doesn't use saved string
+* use substitution variable for query in url instead of adding at end
 * instead of sending whole query, send from keyword to period, then remove from query.
   Prompt: Research super bowl. When is the super bowl?
-* use chat.generate_chat_prompt on "summarize the following:"+ query-results
+   -- "super bowl" sent. prompt is "When is the super bowl".
+* "Research" key: saves to string in params,
+  "Analyse" key: summarizes, then saves
+  "Examine" key: doesnt save query, doesn't use saved string, only puts results in context
+  "Scan" key: like Examine, but summarized
+  "Get" key: followed by url, other params are ignored. saves to context.
+  "Summarize" key: like Get, but summarized
+  
+  Put results in saved string (editable!), then always added to context until cleared
+  Results of multiple requests accumulate in string until cleared.
+* Clear Research button
+* summarize: use chat.generate_chat_prompt on "summarize the following:"+ query-results
   before storing in research string
-* use substitution variable for query in url instead of adding at end
 * button array for multiple keyword/url pairs
-* layout more than one box per line
 """
 
 import gradio as gr
@@ -92,10 +97,10 @@ def ui():
           clear = gr.Button("Clear Research", elem_classes='refresh-button')
         url = gr.Textbox(value=params['url'], label='Retrieval URL')
         with gr.Row():
-            key = gr.Textbox(value=params['key'], label="Key at start of prompt to invoke RAG")
-            start = gr.Textbox(value=params['start'], label='Retrieved data is inserted in conext starting with this string')
-            end = gr.Textbox(value=params['end'], label='This text ends context insertion')
-            space = gr.Textbox(value=params['space'], label="substitute for '+' in URL query format")
+            key = gr.Textbox(value=params['key'], label="Key: Text at start of prompt to invoke RAG")
+            start = gr.Textbox(value=params['start'], label='Start: Retrieved data capture starts when this text is found')
+            end = gr.Textbox(value=params['end'], label='End: Retrieved data capture ends when this text is found')
+            space = gr.Textbox(value=params['space'], label="Space: After URL-encoding the query, substitute this for '+'")
 
     def save():
         with open('saved_data.pkl', 'wb') as f:
