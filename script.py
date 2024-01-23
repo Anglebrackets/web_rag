@@ -86,13 +86,16 @@ def ui():
     To learn about gradio components, check out the docs:
     https://gradio.app/docs/
     """
-    activate = gr.Checkbox(value=params['activate'], label='Activate Web RAG')
-    key = gr.Textbox(value=params['key'], label="Key at start of prompt to invoke RAG")
-    url = gr.Textbox(value=params['url'], label='Retrieval URL')
-    start = gr.Textbox(value=params['start'], label='Retrieved data is inserted in conext starting with this string')
-    end = gr.Textbox(value=params['end'], label='This text ends context insertion')
-    space = gr.Textbox(value=params['space'], label="substitute for '+' in URL query format")
-    clear = gr.Button(["Clear Research"])
+    with gr.Accordion("Web RAG"):
+        with gr.Row():
+          activate = gr.Checkbox(value=params['activate'], label='Activate Web RAG')
+          clear = gr.Button("Clear Research", elem_classes='refresh-button')
+        url = gr.Textbox(value=params['url'], label='Retrieval URL')
+        with gr.Row():
+            key = gr.Textbox(value=params['key'], label="Key at start of prompt to invoke RAG")
+            start = gr.Textbox(value=params['start'], label='Retrieved data is inserted in conext starting with this string')
+            end = gr.Textbox(value=params['end'], label='This text ends context insertion')
+            space = gr.Textbox(value=params['space'], label="substitute for '+' in URL query format")
 
     def save():
         with open('saved_data.pkl', 'wb') as f:
@@ -118,7 +121,7 @@ def ui():
     def button_clicked(button_input):
         return f"You clicked the '{button_input}' button."
 
-    clear.clicked(button_clicked, clear, None)
+    clear.click(button_clicked, clear, None)
     activate.change(update_activate, activate, None)
     key.change(update_key, key, None)
     url.change(update_url, url, None)
