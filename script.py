@@ -44,36 +44,45 @@ except FileNotFoundError:
     params = {
         "display_name": "Web RAG",
         "activate": False,
-        "url":    "https://www.duckduckgo.com/?q=",
-        "start":  "[ Next Page > ]",
-        "end":    "\n6.   ",
-        "space":  "",
-        "key":    "www,",
+        "url":      "https://www.duckduckgo.com/lite/?q=",
+        "start":    "[ Next Page > ]",
+        "end":      "\n6.   ",
+        "space":    "",
+        "max":      5000,
+        "key":      "www,",
     }
-#params.update( {
-#        "research":   "",
-#})
+params.update( {
+        "url":      "https://en.m.wikipedia.org/wiki/",
+        "start":    "the free encyclopedia",
+        "end":      "",
+        "space":    "_",
+        "max":      5000,
+})
 research_data = ""
 
 def get_search_context(url, query):
     if len(query) > 0:
-      query = urllib.parse.quote_plus(query)
-      if len(params['space']) > 0:
-        query = query.replace("+", params['space'])
-      if url.find('%q') >= 0:
-        url = url.replace('%q', query)
+        query = urllib.parse.quote_plus(query)
+        if len(params['space']) > 0:
+            query = query.replace("+", params['space'])
+        if url.find('%q') >= 0:
+            url = url.replace('%q', query)
     print(f"get_search_context: url={url} query={query}")
     #search_context = "\nJonn Jonze is the president of Frubaz Corp.\n"
     search_context = os.popen('links -dump ' + url).read()
-    start = search_context.find(params['start'])
-    if start < 0:
-      start = 0
+    if len(params['start']) > 0:
+        start = search_context.find(params['start'])
+        if start < 0:
+            start = 0
+        else:
+            start = start + 15
+        search_context = search_context[start:]
+    if len(params['end']) > 0:
+        end = search_context.find(params['end'])
+        if end < 0:
+            end = params['max']
     else:
-      start = start + 15
-    search_context = search_context[start:]
-    end = search_context.find(params['end'])
-    if end < 0:
-      end = 5000
+        end = params['max']
     search_context = search_context[:end]
     print(f"search_context:\n{search_context}")
     return search_context
@@ -103,11 +112,10 @@ def custom_generate_chat_prompt(user_input, state, **kwargs):
                     global research_data
                     research_data = research_data + data
                     #params.update({'research': research_data})
-                    user_prompt = 'say "Got it!"' 
+                    user_prompt = f'Say "Retrieved {len(data)} characters." and "Total is {len(research_data)}".'
             state['context'] = research_data + state['context']
     result = chat.generate_chat_prompt(user_prompt, state, **kwargs)
     return result
-
 
 def ui():
     """
@@ -119,22 +127,25 @@ def ui():
     """
     with gr.Accordion("Web RAG -- Retrieval Augmented Generation from a web URL"):
         with gr.Row():
-          activate = gr.Checkbox(value=params['activate'], label='Activate Web RAG')
-          show = gr.Button("Show Research", elem_classes='refresh-button')
-          clear = gr.Button("Clear Research", elem_classes='refresh-button')
-        url = gr.Textbox(value=params['url'], label='Retrieval URL')
-        with gr.Row():
-            key = gr.Textbox(value=params['key'], label="Key: Text at start of prompt to invoke RAG")
-            start = gr.Textbox(value=params['start'], label='Start: Retrieved data capture starts when this text is found')
-            end = gr.Textbox(value=params['end'], label='End: Retrieved data capture ends when this text is found')
-            space = gr.Textbox(value=params['space'], label="Space: After URL-encoding the query, substitute this for '+'")
-        research = gr.Textbox(value=research_data, label='Retrieved Research')
+            activate = gr.Checkbox(value=params['activate'], label='Activate Web RAG')
+            clear = gr.Button("Clear Data", elem_classes='refresh-button')
+        with gr.Accordion("Auto-RAG parameters:", open=False):
+            url = gr.Textbox(value=params['url'], label='Retrieval URL')
+            maxchars = gr.Number(value=params['max'], label='Maximum characters of data to add')
+            with gr.Row():
+                key = gr.Textbox(value=params['key'], label="Key: Text at start of prompt to invoke RAG")
+                start = gr.Textbox(value=params['start'], label='Start: Retrieved data capture starts when this text is found')
+                end = gr.Textbox(value=params['end'], label='End: Retrieved data capture ends when this text is found')
+                space = gr.Textbox(value=params['space'], label="Space: After URL-encoding the query, substitute this for '+'")
 
     def update_activate(x):
         params.update({'activate': x})
         save()
     def update_url(x):
         params.update({'url': x})
+        save()
+    def update_maxchars(x):
+        params.update({'maxchars': x})
         save()
     def update_start(x):
         params.update({'start': x})
@@ -148,23 +159,15 @@ def ui():
     def update_key(x):
         params.update({'key': x})
         save()
-    def show_clicked(button_input):
-        global research_data
-        print(f"research_data: {len(research_data)}")
     def clear_clicked(button_input):
-        params.update({'research': ""})
-        save()
-    def update_research(x):
         global research_data
-        research_data = x
-        save()
+        research_data = ""
 
-    clear.click(clear_clicked, clear, research)
-    show.click(show_clicked, show, research)
+    clear.click(clear_clicked, clear, None)
     activate.change(update_activate, activate, None)
     url.change(update_url, url, None)
+    maxchars.change(update_maxchars, maxchars, None)
     key.change(update_key, key, None)
     start.change(update_start, start, None)
     end.change(update_end, end, None)
     space.change(update_space, space, None)
-    research.change(update_research, research, research)
