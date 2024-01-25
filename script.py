@@ -12,8 +12,8 @@ TODO:
   "Analyse" key: summarizes, then saves
   "Examine" key: doesnt save query, doesn't use saved string, only puts results in context
   "Scan" key: like Examine, but summarized
-  "Get" key: followed by url, then rest of sentence (if any) is query. saves to context.
-   prompt: Get https://www.wikipedia.org/wiki/ Charles_Martel. Who was Charles Martel?
+  "Get" key: followed by url(s). saves to context.
+   prompt: Get https://www.wikipedia.org/wiki/Charles_Martel 
   "Summarize" key: like Get, but summarized
   
   Put results in saved string (editable!), then always added to context until cleared
@@ -50,17 +50,19 @@ except FileNotFoundError:
         "space":  "",
         "key":    "www,",
     }
-    params.update( {
-            "end":   "\n6.   ",
-    })
+#params.update( {
+#        "research":   "",
+#})
+research_data = ""
 
 def get_search_context(url, query):
-    query = urllib.parse.quote_plus(query)
-    if len(params['space']) > 0:
-      query = query.replace("+", params['space'])
-    if url.find('%q') >= 0:
-      url = url.replace('%q', query)
-    print(f"get_search_context: {url}")
+    if len(query) > 0:
+      query = urllib.parse.quote_plus(query)
+      if len(params['space']) > 0:
+        query = query.replace("+", params['space'])
+      if url.find('%q') >= 0:
+        url = url.replace('%q', query)
+    print(f"get_search_context: url={url} query={query}")
     #search_context = "\nJonn Jonze is the president of Frubaz Corp.\n"
     search_context = os.popen('links -dump ' + url).read()
     start = search_context.find(params['start'])
@@ -76,6 +78,10 @@ def get_search_context(url, query):
     print(f"search_context:\n{search_context}")
     return search_context
 
+def save():
+    with open('saved_data.pkl', 'wb') as f:
+        pickle.dump(params, f)
+
 def custom_generate_chat_prompt(user_input, state, **kwargs):
     """
     Only used in chat mode.
@@ -86,6 +92,19 @@ def custom_generate_chat_prompt(user_input, state, **kwargs):
             user_prompt = user_input[4:].strip()
             search_context = get_search_context(params['url'], user_prompt)
             state['context'] = search_context + state['context']
+        else:
+            parts = user_prompt.split(" ", 2)
+            if len(parts) > 1:
+                key = parts[0]
+                if key.lower() == "get":  # url in prompt
+                    url = parts[1]
+                    print(f"get url={url}")
+                    data = get_search_context(url, "")
+                    global research_data
+                    research_data = research_data + data
+                    #params.update({'research': research_data})
+                    user_prompt = 'say "Got it!"' 
+            state['context'] = research_data + state['context']
     result = chat.generate_chat_prompt(user_prompt, state, **kwargs)
     return result
 
@@ -101,6 +120,7 @@ def ui():
     with gr.Accordion("Web RAG -- Retrieval Augmented Generation from a web URL"):
         with gr.Row():
           activate = gr.Checkbox(value=params['activate'], label='Activate Web RAG')
+          show = gr.Button("Show Research", elem_classes='refresh-button')
           clear = gr.Button("Clear Research", elem_classes='refresh-button')
         url = gr.Textbox(value=params['url'], label='Retrieval URL')
         with gr.Row():
@@ -108,10 +128,8 @@ def ui():
             start = gr.Textbox(value=params['start'], label='Start: Retrieved data capture starts when this text is found')
             end = gr.Textbox(value=params['end'], label='End: Retrieved data capture ends when this text is found')
             space = gr.Textbox(value=params['space'], label="Space: After URL-encoding the query, substitute this for '+'")
+        research = gr.Textbox(value=research_data, label='Retrieved Research')
 
-    def save():
-        with open('saved_data.pkl', 'wb') as f:
-            pickle.dump(params, f)
     def update_activate(x):
         params.update({'activate': x})
         save()
@@ -130,13 +148,23 @@ def ui():
     def update_key(x):
         params.update({'key': x})
         save()
-    def button_clicked(button_input):
-        print(f"You clicked the '{button_input}' button.")
+    def show_clicked(button_input):
+        global research_data
+        print(f"research_data: {len(research_data)}")
+    def clear_clicked(button_input):
+        params.update({'research': ""})
+        save()
+    def update_research(x):
+        global research_data
+        research_data = x
+        save()
 
-    clear.click(button_clicked, clear, None)
+    clear.click(clear_clicked, clear, research)
+    show.click(show_clicked, show, research)
     activate.change(update_activate, activate, None)
-    key.change(update_key, key, None)
     url.change(update_url, url, None)
+    key.change(update_key, key, None)
     start.change(update_start, start, None)
     end.change(update_end, end, None)
     space.change(update_space, space, None)
+    research.change(update_research, research, research)
