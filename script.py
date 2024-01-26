@@ -44,30 +44,31 @@ except FileNotFoundError:
     params = {
         "display_name": "Web RAG",
         "activate": False,
-        "url":      "https://www.duckduckgo.com/lite/?q=",
+        "url":      "https://lite.duckduckgo.com/lite/?q=%q",
         "start":    "[ Next Page > ]",
         "end":      "\n6.   ",
         "space":    "",
         "max":      5000,
         "key":      "www,",
+        "data":     "",
     }
-params.update( {
-        "url":      "https://en.m.wikipedia.org/wiki/",
-        "start":    "the free encyclopedia",
-        "end":      "",
-        "space":    "_",
-        "max":      5000,
-})
-research_data = ""
+    params.update( {
+            "url":      "https://en.m.wikipedia.org/wiki/%q",
+            "start":    "the free encyclopedia",
+            "end":      "",
+            "space":    "_",
+            "max":      5000,
+    })
 
 def get_search_context(url, query):
     if len(query) > 0:
+        print(f"query={query}")
         query = urllib.parse.quote_plus(query)
         if len(params['space']) > 0:
             query = query.replace("+", params['space'])
         if url.find('%q') >= 0:
             url = url.replace('%q', query)
-    print(f"get_search_context: url={url} query={query}")
+    print(f"get_search_context: url={url}")
     #search_context = "\nJonn Jonze is the president of Frubaz Corp.\n"
     search_context = os.popen('links -dump ' + url).read()
     if len(params['start']) > 0:
@@ -97,23 +98,23 @@ def custom_generate_chat_prompt(user_input, state, **kwargs):
     """
     user_prompt = user_input
     if params['activate']:
-        if user_prompt.startswith(params['key']):
-            user_prompt = user_input[4:].strip()
-            search_context = get_search_context(params['url'], user_prompt)
-            state['context'] = search_context + state['context']
-        else:
-            parts = user_prompt.split(" ", 2)
-            if len(parts) > 1:
-                key = parts[0]
-                if key.lower() == "get":  # url in prompt
-                    url = parts[1]
-                    print(f"get url={url}")
-                    data = get_search_context(url, "")
-                    global research_data
-                    research_data = research_data + data
-                    #params.update({'research': research_data})
-                    user_prompt = f'Say "Retrieved {len(data)} characters." and "Total is {len(research_data)}".'
-            state['context'] = research_data + state['context']
+        retrieved = ""
+        parts = user_prompt.split(" ", 1)
+        if len(parts) > 1:
+            key = parts[0]
+            if key.lower() == params['key'].lower():
+                user_prompt = parts[1].strip()
+                retrieved = get_search_context(params['url'], user_prompt)
+            elif key.lower() == "get":  # url in prompt
+                url = parts[1].strip()
+                retrieved = get_search_context(url, "")
+                total = len(retrieved) + len(params['data'])
+                user_prompt = f'Say "Retrieved {len(retrieved)} characters." and "Total is {total}".'
+        data = params['data'] + retrieved
+        print(f"Retrieved {len(retrieved)}, total:{len(data)}")
+        params.update({'data': data})
+        context = data + state['context']
+        state.update({'context': context})
     result = chat.generate_chat_prompt(user_prompt, state, **kwargs)
     return result
 
@@ -125,17 +126,18 @@ def ui():
     To learn about gradio components, check out the docs:
     https://gradio.app/docs/
     """
-    with gr.Accordion("Web RAG -- Retrieval Augmented Generation from a web URL"):
+    with gr.Accordion("Web RAG -- Retrieval-Augmented Generation using web content"):
         with gr.Row():
             activate = gr.Checkbox(value=params['activate'], label='Activate Web RAG')
+            maxchars = gr.Number(value=params['max'], label='Maximum characters of retrieveddata to keep')
             clear = gr.Button("Clear Data", elem_classes='refresh-button')
+        with gr.Row():
+            start = gr.Textbox(value=params['start'], label='Start: Retrieved data capture starts when this text is found')
+            end = gr.Textbox(value=params['end'], label='End: Retrieved data capture ends when this text is found (overrides max chars if found)')
         with gr.Accordion("Auto-RAG parameters:", open=False):
             url = gr.Textbox(value=params['url'], label='Retrieval URL')
-            maxchars = gr.Number(value=params['max'], label='Maximum characters of data to add')
             with gr.Row():
                 key = gr.Textbox(value=params['key'], label="Key: Text at start of prompt to invoke RAG")
-                start = gr.Textbox(value=params['start'], label='Start: Retrieved data capture starts when this text is found')
-                end = gr.Textbox(value=params['end'], label='End: Retrieved data capture ends when this text is found')
                 space = gr.Textbox(value=params['space'], label="Space: After URL-encoding the query, substitute this for '+'")
 
     def update_activate(x):
@@ -160,8 +162,8 @@ def ui():
         params.update({'key': x})
         save()
     def clear_clicked(button_input):
-        global research_data
-        research_data = ""
+        params.update({'data': ""})
+        save()
 
     clear.click(clear_clicked, clear, None)
     activate.change(update_activate, activate, None)
