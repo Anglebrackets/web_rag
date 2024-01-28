@@ -1,4 +1,6 @@
 ****Web RAG -- Retrieval-Augmented Generation from Web content****
+
+***An extension for Ooobabooga's Text-Generation Web UI***
 * This extension requires that the 'links' browser be installed on your machine
 * I have only tested on Linux. I'm open to PRs to make the links integration work on other platforms
 
