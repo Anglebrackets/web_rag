@@ -48,18 +48,10 @@ except FileNotFoundError:
         "start":    "[ Next Page > ]",
         "end":      "\n6.   ",
         "space":    "",
-        "max":      5000,
+        "max":      "5000",
         "key":      "www,",
         "data":     "",
     }
-    params.update( {
-            "url":      "https://en.m.wikipedia.org/wiki/%q",
-            "start":    "the free encyclopedia",
-            "end":      "",
-            "space":    "_",
-            "max":      5000,
-    })
-
 def get_search_context(url, query):
     if len(query) > 0:
         print(f"query={query}")
@@ -81,9 +73,9 @@ def get_search_context(url, query):
     if len(params['end']) > 0:
         end = search_context.find(params['end'])
         if end < 0:
-            end = params['max']
+            end = int(params['max'])
     else:
-        end = params['max']
+        end = int(params['max'])
     search_context = search_context[:end]
     print(f"search_context:\n{search_context}")
     return search_context
@@ -111,8 +103,10 @@ def custom_generate_chat_prompt(user_input, state, **kwargs):
                 total = len(retrieved) + len(params['data'])
                 user_prompt = f'Say "Retrieved {len(retrieved)} characters." and "Total is {total}".'
         data = params['data'] + retrieved
-        print(f"Retrieved {len(retrieved)}, total:{len(data)}")
-        params.update({'data': data})
+        if len(retrieved) > 0:
+            print(f"Retrieved {len(retrieved)}, total:{len(data)}")
+            params.update({'data': data})
+            save()
         context = data + state['context']
         state.update({'context': context})
     result = chat.generate_chat_prompt(user_prompt, state, **kwargs)
@@ -129,25 +123,26 @@ def ui():
     with gr.Accordion("Web RAG -- Retrieval-Augmented Generation using web content"):
         with gr.Row():
             activate = gr.Checkbox(value=params['activate'], label='Activate Web RAG')
-            maxchars = gr.Number(value=params['max'], label='Maximum characters of retrieveddata to keep')
-            clear = gr.Button("Clear Data", elem_classes='refresh-button')
+            maxchars = gr.Number(value=params['max'], label='Maximum characters of retrieved data to keep')
         with gr.Row():
-            start = gr.Textbox(value=params['start'], label='Start: Retrieved data capture starts when this text is found')
+            start = gr.Textbox(value=params['start'], label='Start: Retrieved data capture starts after this text is found')
             end = gr.Textbox(value=params['end'], label='End: Retrieved data capture ends when this text is found (overrides max chars if found)')
-        with gr.Accordion("Auto-RAG parameters:", open=False):
+        with gr.Accordion("Auto-RAG parameters", open=False):
             url = gr.Textbox(value=params['url'], label='Retrieval URL')
             with gr.Row():
                 key = gr.Textbox(value=params['key'], label="Key: Text at start of prompt to invoke RAG")
                 space = gr.Textbox(value=params['space'], label="Space: After URL-encoding the query, substitute this for '+'")
+        with gr.Accordion("Edit retrieved data", open=False):
+            with gr.Row():
+                edit = gr.Button("Show Data", elem_classes='refresh-button')
+                clear = gr.Button("Clear Data", elem_classes='refresh-button')
+            retrieved = gr.Textbox(value=params['data'], label='Retrieved data')
 
     def update_activate(x):
         params.update({'activate': x})
         save()
-    def update_url(x):
-        params.update({'url': x})
-        save()
     def update_maxchars(x):
-        params.update({'maxchars': x})
+        params.update({'max': x})
         save()
     def update_start(x):
         params.update({'start': x})
@@ -155,17 +150,26 @@ def ui():
     def update_end(x):
         params.update({'end': x})
         save()
-    def update_space(x):
-        params.update({'space': x})
+    def update_url(x):
+        params.update({'url': x})
         save()
     def update_key(x):
         params.update({'key': x})
         save()
+    def update_space(x):
+        params.update({'space': x})
+        save()
     def clear_clicked(button_input):
         params.update({'data': ""})
         save()
+        return ""
+    def edit_clicked(button_input):
+        data = params['data']
+        return data
+    def update_retrieved(x):
+        params.update({'data': x})
+        save()
 
-    clear.click(clear_clicked, clear, None)
     activate.change(update_activate, activate, None)
     url.change(update_url, url, None)
     maxchars.change(update_maxchars, maxchars, None)
@@ -173,3 +177,6 @@ def ui():
     start.change(update_start, start, None)
     end.change(update_end, end, None)
     space.change(update_space, space, None)
+    clear.click(clear_clicked, clear, retrieved)
+    edit.click(edit_clicked, edit, retrieved)
+    retrieved.change(update_retrieved, retrieved, None)
