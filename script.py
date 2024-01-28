@@ -5,20 +5,15 @@ uses links browser which must be installed.
 only tested on linux
 
 TODO:
-* instead of sending whole query, send from keyword to period, then remove from query.
+* ?instead of sending whole query, send from keyword to period, then remove from query.
   Prompt: Research super bowl. When is the super bowl?
    -- "super bowl" sent. prompt is "When is the super bowl".
 * "Research" key: saves to string in params,
   "Analyse" key: summarizes, then saves
   "Examine" key: doesnt save query, doesn't use saved string, only puts results in context
   "Scan" key: like Examine, but summarized
-  "Get" key: followed by url(s). saves to context.
-   prompt: Get https://www.wikipedia.org/wiki/Charles_Martel 
   "Summarize" key: like Get, but summarized
   
-  Put results in saved string (editable!), then always added to context until cleared
-  Results of multiple requests accumulate in string until cleared.
-* Clear Research button
 * summarize: use chat.generate_chat_prompt on "summarize the following:"+ query-results
   before storing in research string
 * button array for multiple keyword/url pairs
@@ -26,6 +21,11 @@ TODO:
 WIP:
 
 DONE:
+*  "Get" key: followed by url(s). saves to context.
+   prompt: Get https://www.wikipedia.org/wiki/Charles_Martel 
+  Put results in saved string (editable!), then always added to context until cleared
+  Results of multiple requests accumulate in string until cleared.
+* Clear Research button
 * use substitution variable for query in url instead of adding at end
 """
 
