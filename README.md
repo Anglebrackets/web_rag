@@ -25,6 +25,7 @@ Auto -- pass prompt to a search engine, insert result into context, then process
 
 
 Notes
+  * These examples were run using neuralhermes-2.5-mistral-7b.Q5_K_M.gguf
   * This extension only works on web pages that do not require javascript
   * Retrieved data is kept until the 'Clear Data' button is pressed
   * You can edit the data using the 'Show Data' button
