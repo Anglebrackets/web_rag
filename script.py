@@ -49,7 +49,7 @@ except FileNotFoundError:
         "end":      "\n6.   ",
         "space":    "",
         "max":      "5000",
-        "key":      "www,",
+        "key":      "web,",
         "data":     "",
     }
 def get_search_context(url, query):
