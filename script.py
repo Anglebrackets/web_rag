@@ -77,11 +77,10 @@ def get_search_context(url, query):
     else:
         end = int(params['max'])
     search_context = search_context[:end]
-    print(f"search_context:\n{search_context}")
     return search_context
 
 def save():
-    with open('saved_data.pkl', 'wb') as f:
+    with open('web_rag_data.pkl', 'wb') as f:
         pickle.dump(params, f)
 
 def custom_generate_chat_prompt(user_input, state, **kwargs):
