@@ -23,13 +23,13 @@ Manual
 
 
 Auto -- pass prompt to a search engine, insert result into context, then process prompt
-    - there are fields in the UI to set the keyword, url, etc. The prompt is url-encoded and inserted into the url
-  * You: when will the super bowl be played?
-  * AI: This year's Super Bowl LVII is scheduled to take place on February 12, 2023.
-  * You: web, when will the super bowl be played?
-  * [ query encoded as: when+will+the+super+bowl+be+played%3F and sent to search engine ]
-  * [ prompt becomes "when will the super bowl be played?"]
-  * AI: The Super Bowl 58 is scheduled for Sunday, February 11, 2024.
+     - there are fields in the UI to set the keyword, url, etc. The prompt is url-encoded and inserted into the url
+ * You: What is the world's hottest pepper?
+ * AI: The current record holder for the world's hottest pepper is the Carolina Reaper, with a reported heat level of over 1.5 million Scoville Heat Units (SHU). However, new varieties are constantly being developed and tested, so it's always possible that another pepper might surpass this title in the future.
+ * You: web, What is the world's hottest pepper?
+ * -- [ query encoded as: What+is+the+world%27s+hottest+pepper%3F and sent to search engine ]
+ * --  [ prompt becomes "What is the world's hottest pepper?"]
+ * AI: As of now, Pepper X holds the record for the world's hottest pepper with an average of 2.69 million Scoville Heat Units (SHU) and peaks over 3 million SHU. However, this information is subject to change as new varieties are continuously being developed and tested in the chili-growing community.
 
 
 Notes
