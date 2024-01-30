@@ -27,8 +27,8 @@ Auto -- pass prompt to a search engine, insert result into context, then process
  * You: What is the world's hottest pepper?
  * AI: The current record holder for the world's hottest pepper is the Carolina Reaper, with a reported heat level of over 1.5 million Scoville Heat Units (SHU). However, new varieties are constantly being developed and tested, so it's always possible that another pepper might surpass this title in the future.
  * You: web, What is the world's hottest pepper?
- * -- [ query encoded as: What+is+the+world%27s+hottest+pepper%3F and sent to search engine ]
- * --  [ prompt becomes "What is the world's hottest pepper?"]
+   - query encoded as: What+is+the+world%27s+hottest+pepper%3F and sent to search engine
+   - prompt becomes "What is the world's hottest pepper?"
  * AI: As of now, Pepper X holds the record for the world's hottest pepper with an average of 2.69 million Scoville Heat Units (SHU) and peaks over 3 million SHU. However, this information is subject to change as new varieties are continuously being developed and tested in the chili-growing community.
 
 
