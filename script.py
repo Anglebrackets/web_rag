@@ -124,7 +124,7 @@ def ui():
             activate = gr.Checkbox(value=params['activate'], label='Activate Web RAG')
             maxchars = gr.Number(value=params['max'], label='Maximum characters of retrieved data to keep')
         with gr.Row():
-            start = gr.Textbox(value=params['start'], label='Start: Retrieved data capture starts after this text is found')
+            start = gr.Textbox(value=params['start'], label='Start: Retrieved data capture starts after this text is found (starts at beginning if not found)')
             end = gr.Textbox(value=params['end'], label='End: Retrieved data capture ends when this text is found (overrides max chars if found)')
         with gr.Accordion("Auto-RAG parameters", open=False):
             url = gr.Textbox(value=params['url'], label='Retrieval URL')
