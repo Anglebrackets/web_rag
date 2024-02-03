@@ -44,20 +44,22 @@ except FileNotFoundError:
     params = {
         "display_name": "Web RAG",
         "activate": False,
+        "get_key":  "get",
         "url":      "https://lite.duckduckgo.com/lite/?q=%q",
         "start":    "[ Next Page > ]",
         "end":      "\n6.   ",
-        "space":    "",
         "max":      "5000",
-        "key":      "web,",
+        "auto_key": "web,",
         "data":     "",
     }
+params.update({
+        "get_key":  "get",
+        "auto_key": "web,",
+})
 def get_search_context(url, query):
     if len(query) > 0:
         print(f"query={query}")
         query = urllib.parse.quote_plus(query)
-        if len(params['space']) > 0:
-            query = query.replace("+", params['space'])
         if url.find('%q') >= 0:
             url = url.replace('%q', query)
     print(f"get_search_context: url={url}")
@@ -93,10 +95,10 @@ def custom_generate_chat_prompt(user_input, state, **kwargs):
         parts = user_prompt.split(" ", 1)
         if len(parts) > 1:
             key = parts[0]
-            if key.lower() == params['key'].lower():
+            if key.lower() == params['auto_key'].lower():
                 user_prompt = parts[1].strip()
                 retrieved = get_search_context(params['url'], user_prompt)
-            elif key.lower() == "get":  # url in prompt
+            elif key.lower() == params['get_key'].lower():  # url in prompt
                 url = parts[1].strip()
                 retrieved = get_search_context(url, "")
                 total = len(retrieved) + len(params['data'])
@@ -119,18 +121,17 @@ def ui():
     To learn about gradio components, check out the docs:
     https://gradio.app/docs/
     """
-    with gr.Accordion("Web RAG -- Retrieval-Augmented Generation using web content"):
+    with gr.Accordion("Web Retrieval-Augmented Generation - Retrieve data from web pages and insert into context"):
+        activate = gr.Checkbox(value=params['activate'], label='Activate Web RAG')
         with gr.Row():
-            activate = gr.Checkbox(value=params['activate'], label='Activate Web RAG')
-            maxchars = gr.Number(value=params['max'], label='Maximum characters of retrieved data to keep')
+            get_key = gr.Textbox(value=params['get_key'], label="Key text at start of prompt that invokes direct page retrieval.  The url to retrieve must follow this key in the prompt. Not case-sensitive.")
+            maxchars = gr.Number(value=params['max'], label='Maximum characters of retrieved data to keep (if end text not found)')
         with gr.Row():
             start = gr.Textbox(value=params['start'], label='Start: Retrieved data capture starts after this text is found (starts at beginning if not found)')
-            end = gr.Textbox(value=params['end'], label='End: Retrieved data capture ends when this text is found (overrides max chars if found)')
-        with gr.Accordion("Auto-RAG parameters", open=False):
-            url = gr.Textbox(value=params['url'], label='Retrieval URL')
-            with gr.Row():
-                key = gr.Textbox(value=params['key'], label="Key: Text at start of prompt to invoke RAG")
-                space = gr.Textbox(value=params['space'], label="Space: After URL-encoding the query, substitute this for '+'")
+            end = gr.Textbox(value=params['end'], label='End: Retrieved data capture ends when this text is found (overrides maximum characters if found)')
+        with gr.Accordion("Auto-RAG -- builds url to retrieve from the prompt text and the template below", open=True):
+            key = gr.Textbox(value=params['auto_key'], label="Key text at start of prompt that invokes Auto-RAG. Not case-sensitive.")
+            url = gr.Textbox(value=params['url'], label='Retrieval URL template: url-encoded prompt will replace %q')
         with gr.Accordion("Edit retrieved data", open=False):
             with gr.Row():
                 edit = gr.Button("Show Data", elem_classes='refresh-button')
@@ -139,6 +140,9 @@ def ui():
 
     def update_activate(x):
         params.update({'activate': x})
+        save()
+    def update_get_key(x):
+        params.update({'get_key': x})
         save()
     def update_maxchars(x):
         params.update({'max': x})
@@ -153,10 +157,7 @@ def ui():
         params.update({'url': x})
         save()
     def update_key(x):
-        params.update({'key': x})
-        save()
-    def update_space(x):
-        params.update({'space': x})
+        params.update({'auto_key': x})
         save()
     def clear_clicked(button_input):
         params.update({'data': ""})
@@ -170,12 +171,12 @@ def ui():
         save()
 
     activate.change(update_activate, activate, None)
+    get_key.change(update_get_key, get_key, None)
     url.change(update_url, url, None)
     maxchars.change(update_maxchars, maxchars, None)
     key.change(update_key, key, None)
     start.change(update_start, start, None)
     end.change(update_end, end, None)
-    space.change(update_space, space, None)
     clear.click(clear_clicked, clear, retrieved)
     edit.click(edit_clicked, edit, retrieved)
     retrieved.change(update_retrieved, retrieved, None)
