@@ -25,7 +25,8 @@ You can collect multiple pages:
 
 
 Auto -- When auto key is matched (default is 'web,'), the key is removed from the prompt, then the prompt is passed to a search engine, the reply is inserted into the context, then the prompt is processed normally. The context will be kept for following prompts.
-     - there are fields in the UI to set the keyword, url, etc. The prompt is url-encoded and inserted into the url template.
+
+There are fields in the UI to set the keyword, url template, etc. The prompt is url-encoded and inserted into the url template.
  * You: What is the world's hottest pepper?
  * AI: The current record holder for the world's hottest pepper is the Carolina Reaper, with a reported heat level of over 1.5 million Scoville Heat Units (SHU). However, new varieties are constantly being developed and tested, so it's always possible that another pepper might surpass this title in the future.
  * You: web, What is the world's hottest pepper?
