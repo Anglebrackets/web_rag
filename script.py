@@ -121,18 +121,19 @@ def ui():
     To learn about gradio components, check out the docs:
     https://gradio.app/docs/
     """
-    with gr.Accordion("Web Retrieval-Augmented Generation - Retrieve data from web pages and insert into context"):
+    with gr.Accordion("Web Retrieval-Augmented Generation - Retrieve data from web pages and insert into context", open=True):
         activate = gr.Checkbox(value=params['activate'], label='Activate Web RAG')
-        with gr.Row():
-            get_key = gr.Textbox(value=params['get_key'], label="Key text at start of prompt that invokes direct page retrieval.  The url to retrieve must follow this key in the prompt. Not case-sensitive.")
-            maxchars = gr.Number(value=params['max'], label='Maximum characters of retrieved data to keep (if end text not found)')
+        with gr.Accordion("Enter one of these keys at the beginning of the prompt (not case sensitive). Retrieved data is accumulated and inserted into the context of all following prompts, until the 'Clear Data' button is pressed.", open=True):
+            with gr.Row():
+                with gr.Column():
+                    key = gr.Textbox(value=params['auto_key'], label="AUTO: Key text at start of prompt that invokes Auto-RAG. Not case-sensitive. When invoked, the remainder of the prompt is inserted into the url template below, results retrieved and then the prompt is processed normally with the retrieved context.")
+                    url = gr.Textbox(value=params['url'], label='URL template: url-encoded prompt will replace %q')
+                get_key = gr.Textbox(value=params['get_key'], label="DIRECT: Key text at start of prompt that invokes direct page retrieval.  The url to retrieve must follow this key in the prompt.")
         with gr.Row():
             start = gr.Textbox(value=params['start'], label='Start: Retrieved data capture starts after this text is found (starts at beginning if not found)')
             end = gr.Textbox(value=params['end'], label='End: Retrieved data capture ends when this text is found (overrides maximum characters if found)')
-        with gr.Accordion("Auto-RAG -- builds url to retrieve from the prompt text and the template below", open=True):
-            key = gr.Textbox(value=params['auto_key'], label="Key text at start of prompt that invokes Auto-RAG. Not case-sensitive.")
-            url = gr.Textbox(value=params['url'], label='Retrieval URL template: url-encoded prompt will replace %q')
-        with gr.Accordion("Edit retrieved data", open=False):
+            maxchars = gr.Number(value=params['max'], label='Maximum characters of retrieved data to keep (if end text not found)')
+        with gr.Accordion("Edit retrieved data", open=True):
             with gr.Row():
                 edit = gr.Button("Show Data", elem_classes='refresh-button')
                 clear = gr.Button("Clear Data", elem_classes='refresh-button')
